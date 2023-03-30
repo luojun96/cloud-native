@@ -12,3 +12,4 @@
 
 Cluster Autosacler架构：
 ![Cluster Autoscaler架构](resources/cluster_autoscaler_architecture.png)
+

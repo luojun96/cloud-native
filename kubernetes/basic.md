@@ -20,5 +20,12 @@ Scheduler 负责将 Pod 调度到合适的节点上，调度的策略是通过 S
 Kubelet 是 Kubernetes 中的 Agent，负责管理 Pod 的生命周期，包括创建、启动、停止、删除 Pod，以及 Pod 的健康检查。
 ### Kube-Proxy
 Kube-Proxy 是 Kubernetes 中的网络代理，负责实现 Kubernetes Service 的网络代理功能，包括负载均衡、服务发现等。
+每台机器上都运行一个kube-proxy服务，它监听API Server中的Service和Endpoint的变化情况，并通过iptables等来为服务配置负载均衡（仅支持TCP和UDP）。
 ## Kubernetes HA Levels
 ![](resources/kubernetes_ha_levels.png)
+## Service
+### Service类型
+* clusterIP: 默认类型，服务被发布至仅集群内部可见的虚拟IP地址上（service-cluster-ip-range）
+* nodePort: 在API Server启动时，需要通过service-node-port-range参数配置nodePort的范围，同样的，API Server会捕获Service对象并创建事件，即从配置好的nodePort范围取一个有效端口，分配给该Service。每个节点的kube-proxy会尝试在服务分配的nodePort上建立侦听器接受请求，并转发给服务对应的后端Pod实例。
+* LoadBalancer: 采用外部的负载均衡器，作为外网请求进入数据中心内部的统一流量入口，针对不同的云平台，Kubernetes Cloud Manager提供支持不同供应商API的Service Controller。
+## Pod优雅终止
