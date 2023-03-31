@@ -71,4 +71,16 @@ iptables in nodes:```iptables-save -t nat``` or ```iptables -L -t nat```
 -A KUBE-SVC-WWRFY3PZ7W3FGMQW -m comment --comment "default/nginx-basic:http -> 10.0.1.218:80" -j KUBE-SEP-HS7I6HCG4KP2FFMJ
 -A KUBE-SEP-HS7I6HCG4KP2FFMJ -p tcp -m comment --comment "default/nginx-basic:http" -m tcp -j DNAT --to-destination 10.0.1.218:80
 ```
+Change service type from `ClusterIP` to `NodePort`, 
+
+```
+nginx-basic                           NodePort    10.96.158.136    <none>        80:30881/TCP
+```
+Then check iptables on node:
+
+```
+-A KUBE-NODEPORTS -p tcp -m comment --comment "default/nginx-basic:http" -m tcp --dport 30881 -j KUBE-EXT-WWRFY3PZ7W3FGMQW
+...
+
+```
 
