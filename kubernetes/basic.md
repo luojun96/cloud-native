@@ -40,4 +40,17 @@ Kube-Proxy原理：
 * NodePort: 在API Server启动时，需要通过service-node-port-range参数配置nodePort的范围，同样的，API Server会捕获Service对象并创建事件，即从配置好的nodePort范围取一个有效端口，分配给该Service。每个节点的kube-proxy会尝试在服务分配的nodePort上建立侦听器接受请求，并转发给服务对应的后端Pod实例。
 * LoadBalancer: 采用外部的负载均衡器，作为外网请求进入数据中心内部的统一流量入口，针对不同的云平台，Kubernetes Cloud Manager提供支持不同供应商API的Service Controller。
 
+## CoreDNS
+CoreDNS包含一个内存态DNS，以及与其他controller类似的控制器。
+
+CoreDNS实现原理：控制器监听Service和Endpoint的变化并配置DNS，客户端Pod在进行域名解析时，从CoreDNS中查询服务对应的地址记录。
+
+Check DNS in a Pod: ```cat /etc/resolv.conf```
+
+```
+[root@initial-delay /]# 
+nameserver 10.96.0.10
+search default.svc.cluster.local svc.cluster.local cluster.local
+options ndots:5
+```
 ## Pod优雅终止
