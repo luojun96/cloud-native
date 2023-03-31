@@ -66,12 +66,9 @@ iptables in nodes:```iptables-save -t nat``` or ```iptables -L -t nat```
 -A KUBE-SERVICES -d 10.96.158.136/32 -p tcp -m comment --comment "default/nginx-basic:http cluster IP" -m tcp --dport 80 -j KUBE-SVC-WWRFY3PZ7W3FGMQW
 ...
 -A KUBE-SVC-WWRFY3PZ7W3FGMQW -m comment --comment "default/nginx-basic:http -> 10.0.0.128:80" -m statistic --mode random --probability 0.50000000000 -j KUBE-SEP-PM2T4OW2YNAS2OJ4
--A KUBE-SVC-WWRFY3PZ7W3FGMQW -m comment --comment "default/nginx-basic:http -> 10.0.1.218:80" -j KUBE-SEP-HS7I6HCG4KP2FFMJ
-...
--A KUBE-SEP-PM2T4OW2YNAS2OJ4 -s 10.0.0.128/32 -m comment --comment "default/nginx-basic:http" -j KUBE-MARK-MASQ
 -A KUBE-SEP-PM2T4OW2YNAS2OJ4 -p tcp -m comment --comment "default/nginx-basic:http" -m tcp -j DNAT --to-destination 10.0.0.128:80
-...
--A KUBE-SEP-HS7I6HCG4KP2FFMJ -s 10.0.1.218/32 -m comment --comment "default/nginx-basic:http" -j KUBE-MARK-MASQ
+
+-A KUBE-SVC-WWRFY3PZ7W3FGMQW -m comment --comment "default/nginx-basic:http -> 10.0.1.218:80" -j KUBE-SEP-HS7I6HCG4KP2FFMJ
 -A KUBE-SEP-HS7I6HCG4KP2FFMJ -p tcp -m comment --comment "default/nginx-basic:http" -m tcp -j DNAT --to-destination 10.0.1.218:80
 ```
 
