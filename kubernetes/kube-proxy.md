@@ -47,6 +47,7 @@ nginx-deployment-748c667d99-p74hc   1/1     Running   0          5h20m   10.0.0.
 
 nginx-basic   ClusterIP   10.96.158.136   <none>        80/TCP    7h24m   app=nginx
 ```
+#### iptable mode
 the expected target mapping of service to pods:
 
 ```
@@ -65,7 +66,7 @@ iptables in nodes:```iptables-save -t nat``` or ```iptables -L -t nat```
 ...
 -A KUBE-SERVICES -d 10.96.158.136/32 -p tcp -m comment --comment "default/nginx-basic:http cluster IP" -m tcp --dport 80 -j KUBE-SVC-WWRFY3PZ7W3FGMQW
 ...
--A KUBE-SVC-WWRFY3PZ7W3FGMQW -m comment --comment "default/nginx-basic:http -> 10.0.0.128:80" -m statistic --mode random --probability 0.50000000000 -j KUBE-SEP-PM2T4OW2YNAS2OJ4
+-A KUBE-SVC-WWRFY3PZ7W3FGMQW -m comment --comment "default/nginx-basic:http -> 10.0.0.128:80" -m statistic --mode random --probability 0.50000000000 -j KUBE-SEP	-PM2T4OW2YNAS2OJ4
 -A KUBE-SEP-PM2T4OW2YNAS2OJ4 -p tcp -m comment --comment "default/nginx-basic:http" -m tcp -j DNAT --to-destination 10.0.0.128:80
 
 -A KUBE-SVC-WWRFY3PZ7W3FGMQW -m comment --comment "default/nginx-basic:http -> 10.0.1.218:80" -j KUBE-SEP-HS7I6HCG4KP2FFMJ
@@ -83,4 +84,13 @@ Then check iptables on node:
 ...
 
 ```
+### ipvs mode
+Check ipvs on node ```ipvsadm -L -n```:
+
+```
+TCP  10.96.158.136:80 rr
+  -> 10.0.0.250:80                Masq    1      0          0
+  -> 10.0.1.50:80                 Masq    1      0          0
+```
+
 
