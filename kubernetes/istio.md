@@ -5,3 +5,7 @@
 ## 控制平面
 
 ## 流量管理
+
+## 网络
+Service Mesh 涉及的网络栈
+![](resources/service_mesh_network.png)
