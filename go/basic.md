@@ -56,9 +56,11 @@ map不是并发安全的，map 并没有对并发场景进行优化，并发读�
 Go运行时会根据包导入的顺序，依次初始化main包的依赖包，且Go运行时按照“深度优先”原则查看依赖包，在每个包中按照: 常量— 变量 — init函数的顺序进行初始化。
 
 ### 进程、线程和协程的定义
-* 进程：分配系统资源（CPU时间，内存等）的基本单位；有独立的内存空间，切换开销大
+* 进程：分配系统资源（CPU时间，内存, I/O等）的基本单位；有独立的内存空间，切换开销大。
 * 线程：进程的一个执行流，是CPU调度并能独立运行的基本单位。同一进程中的多线程共享内存空间，线程切换代价小；多线程通信方便；从内核层面来看线程其实也是一种特殊的进程，它跟父进程共享了打开的文件和文件系统信息，地址空间和信号处理函数。
-* 协程：Go语言中的轻量级线程实现；Golang在runtime、系统调用等多个方面对goroutine调度进行了封装和处理，当遇到长时间执行或者进行系统调用时，会主动把当前goroutine的CPU(P)转让出去，让其他goroutine能被调度并执行，从语言层面支持了协程。
+* 协程：Go语言中的一种轻量级线程，也可以称为是用户态的线程，与内核态的线程不同，协程由Go语言运行时管理，不是由操作系统内核调度，从而协程上下文切换代价较小，同时协程占用资源小，每个协程的初始栈大小为2kb左右。
+
+Go在runtime、系统调用等多个方面对goroutine调度进行了封装和处理，当遇到长时间执行或者进行系统调用时，会主动把当前goroutine的CPU(P)转让出去，让其他goroutine能被调度并执行，从语言层面支持了协程。
 
 ### 线程和协程的差异
 * 占用资源小，每个协程的初始栈大小仅为2KB。远比java, C 的线程少：goroutine(2KB), 线程（8MB）
@@ -73,7 +75,7 @@ status of Goroutine:
 * syscall
 * waiting
 
-https://golang.org/s/go11sched
+[go11sched](https://golang.org/s/go11sched)
 
 G: goroutine
 
@@ -83,10 +85,12 @@ M: worker thread
 
 G-P-M模型市实现Goroutine调度器的基础，在这基础之上还实现了抢占式调度。以解决 一旦某个G中出现死循环，G将永久占用分配给它的P和M，而位于同一个P中的其他G将得不到调度，出现“饿死”的情况。
 
-https://colobu.com/2017/05/04/golang-runtime-scheduler/
+[golang-runtime-scheduler](https://colobu.com/2017/05/04/golang-runtime-scheduler/)
 
 ### 什么是channel
 channel是Go语言中的一种类型，它是一种引用类型，类似于一个管道，用于goroutine之间的通信。channel是一种特殊的类型，只能用于通信，不能用于其他用途。channel是一种引用类型，channel的零值是nil，channel必须使用make函数初始化后才能使用。
+
+channel的实现原理基于CSP（Communicating Sequential Processes）模型
 
 channel 类似Unix的Pipe，用于协程之间的通信和同步；协程之间虽然解偶，但是它们和channel有着偶合。
 
