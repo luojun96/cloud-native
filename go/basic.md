@@ -83,7 +83,7 @@ P: processor, a resource that is required to execute Go code. M must have an ass
 
 M: worker thread
 
-G-P-M模型市实现Goroutine调度器的基础，在这基础之上还实现了抢占式调度。以解决 一旦某个G中出现死循环，G将永久占用分配给它的P和M，而位于同一个P中的其他G将得不到调度，出现“饿死”的情况。
+G-P-M模型是实现Goroutine调度器的基础，在这基础之上还实现了抢占式调度。以解决 一旦某个G中出现死循环，G将永久占用分配给它的P和M，而位于同一个P中的其他G将得不到调度，出现“饿死”的情况。
 
 [golang-runtime-scheduler](https://colobu.com/2017/05/04/golang-runtime-scheduler/)
 
