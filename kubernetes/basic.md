@@ -5,6 +5,9 @@ API Server 提供集群管理的 REST API 接口, 包括：认证(Authentication
 
 API Server展开
 ![](resources/APIServer.png)
+
+#### Aggregated APIServer
+![](resources/aggregated-apiserver.png)
 ### Controller Manager
 Controller Manager 是一个控制器的集合，负责管理集群中的各种资源，确保Kubernetes遵循声明式系统规范，确保系统的真实状态（Actual State）与用户定义的期望状态（Desired State）一致。
 
@@ -16,7 +19,7 @@ Informer工作机制：
 ### Scheduler
 Scheduler 负责将 Pod 调度到合适的节点上，调度的策略是通过 Scheduler Policy 配置的，可以通过 Scheduler Policy 配置 Pod 的优先级，以及 Pod 调度的策略。
 
-调度阶段：
+1. 调度阶段：
 
   * Predict
   * Prioritize
@@ -54,3 +57,13 @@ search default.svc.cluster.local svc.cluster.local cluster.local
 options ndots:5
 ```
 ## Pod优雅终止
+
+## Metrics Server
+metrics-server是Kubernetes监控体系中的核心组件之一，它负责从Kubelet收集资源指标，然后对这些指标监控数据进行聚合（依赖kube-aggregator的），并在Kubernetes APIServer 中通过Metrics API(/apis/metrics.k8s.io/)公开暴露它们，但是metrics-server只存储最新的指标数据(CPU/Memory)。
+
+*  kube-apiserver要能访问到metrics-server, 需要kube-apiserver启用聚合层。
+*  组件要有认证配置并且绑定到metrics-server。
+*  Pod/Node指标需要由Summary API通过Kubelet公开。
+
+### Monitoring Architecture
+![](resources/monitoring-architecture.png)
