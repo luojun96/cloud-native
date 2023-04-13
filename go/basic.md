@@ -22,6 +22,61 @@ new 函数在日常工程代码中是比较少见的，因为他可被替代。�
 本质上在于 make 函数在初始化时，会初始化 slice、chan、map 类型的内部数据结构，new 函数并不会。
 例如：在 map 类型中，合理的长度（len）和容量（cap）可以提高效率和减少开销。
 
+### interface的实现原理
+Go语言中的接口是一种类型，一种抽象的类型。它是一组方法签名的集合，只要某个对象实现了某个接口的所有方法，那么就说这个对象实现了这个接口, 也常称其为鸭子类型（Duck typing）。
+接口的底层数据机构在运行时分为两类结构体：
+* runtime.eface：表示空接口，包含两个字段：type和data，其中type表示接口的具体类型，data表示接口的具体值。
+* runtime.iface：表示非空接口，包含三个字段：tab、type和data，其中tab表示接口的方法集，type表示接口的具体类型，data表示接口的具体值。
+
+#### runtime.eface
+```go
+type eface struct {
+    _type *_type
+    data  unsafe.Pointer
+}
+```
+
+#### runtime.iface
+```go
+type iface struct {
+    tab  *itab
+    data unsafe.Pointer
+}
+
+type itab struct {
+    inter *interfacetype
+    _type *_type
+    hash  uint32 // copy of _type.hash. Used for type switches.
+    _     [4]byte
+    fun   [1]uintptr // variable sized. fun[0]==0 means _type does not implement inter.
+}
+```
+
+#### 值接收者和指针接收者的区别
+* 值接收者：调用方法时，会将接收者的值进行拷贝，然后再进行方法调用，因此在方法内部无法修改接收者的值。
+* 指针接收者：调用方法时，会将接收者的值的地址进行拷贝，然后再进行方法调用，因此在方法内部可以修改接收者的值。
+
+使用： 如果我们实现了一个值对象的接收者时，也会相应拥有了一个指针接收者。两者并不会互相影响，因为值对象会产生值拷贝，对象会独立开来。而指针对象的接收者不行，因为指针引用的对象，在应用上是期望能够直接对源接收者的值进行修改，若又支持值接收者，显然是不符合其语义的。
+
+#### 类型断言
+```go
+var x interface{} = 1
+v, ok := x.(int)
+```
+
+```go
+var i interface{} = "hello"
+switch v := i.(type) {
+case int:
+    fmt.Printf("Twice %v is %v\n", v, v*2)
+case string:
+    fmt.Printf("%q is %v bytes long\n", v, len(v))
+case nil:
+    fmt.Println("x is nil")
+default:
+    fmt.Println("I don't know about type %T!\n", v)
+}
+```
 ### string的实现原理
 string在Go中是一种值类型，即每个字符串都是不可变的，一旦创建就不能被修改。
 
