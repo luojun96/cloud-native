@@ -96,8 +96,20 @@ type string struct {
 ### map的现实原理
 Go 语言中的 Map 是一种哈希表实现的无序键值对集合，底层使用了散列表。Map 内部由一个桶数组和对应的哈希函数组成，每个桶包含一个指向键值对链表的指针。在 Map 中添加、查找和删除键值对时，会根据键的哈希值计算对应的桶的索引，并在该桶的链表中进行操作。为了减少哈希冲突，Go 语言中的 Map 使用了链表式开放寻址法的解决方案。
 
+#### map的内部实现
+![](resources/runtime_hmap.png)
+
+hashcode:
+![](resources/map_hashcode.png)
+
+#### map的扩容
+Go运行时的map实现中引入了一个LoadFactor（负载因子），当count >LoadFactor * 2^B或overflow bucket过多时，运行时会对map进行扩容。目前LoadFactor设置为6.5（loadFactorNum/loadFactorDen）。
+
+如果是因为overflow bucket过多导致的“扩容”，实际上运行时会新建一个和现有规模一样的bucket数组，然后在进行assign和delete操作时进行排空和迁移；如果是因为当前数据数量超出LoadFactor指定的水位的情况，那么运行时会建立一个两倍于现有规模的bucket数组，但真正的排空和迁移工作也是在进行assign和delete操作时逐步进行的。原bucket数组会挂在hmap的oldbuckets指针下面，直到原buckets数组中所有数据都迁移到新数组，原buckets数组才会被释放。
+
+![](resources/map_resize.png)
 ### map并发安全吗 
-map不是并发安全的，map 并没有对并发场景进行优化，并发读写是使用map时常见的错误, 如果多个goroutine同时访问一个map，就会出现并发问题，需要加锁保护。三种线程安全的map: 
+map不是并发安全的，map并没有对并发场景进行优化，并发读写是使用map时常见的错误, 如果多个goroutine同时访问一个map，就会出现并发问题，需要加锁保护。三种线程安全的map: 
 
 * 加读写锁；
 * 加分片锁；
