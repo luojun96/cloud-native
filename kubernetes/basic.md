@@ -26,13 +26,16 @@ Scheduler 负责将 Pod 调度到合适的节点上，调度的策略是通过 S
   * Bind
  
 ### Kubelet
-Kubelet 是 Kubernetes 中的 Agent，负责管理 Pod 的生命周期，包括创建、启动、停止、删除 Pod，以及 Pod 的健康检查, 并负责汇报当前节点的资源信息和健康状态。
+Kubelet 是 Kubernetes 中的 Agent，负责管理 Pod 的生命周期，包括创建、启动、停止、删除 Pod，以及 Pod 的健康检查。
+
 #### CNI
 Kubernetes网络模型设计的基础原则是：
 
 * 所有Pod能够不通过NAT就能相互访问
 * 所有节点能够不通过NAT就能相互访问
 * 容器内看到的IP地址和外部组件看到的容器IP是一样的
+
+
 ### Kube-Proxy
 Kube-Proxy 是 Kubernetes 中的网络代理，负责实现 Kubernetes Service 的网络代理功能，包括负载均衡、服务发现等。
 
