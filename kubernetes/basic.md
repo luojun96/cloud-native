@@ -26,7 +26,7 @@ Scheduler 负责将 Pod 调度到合适的节点上，调度的策略是通过 S
   * Bind
  
 ### Kubelet
-Kubelet 是 Kubernetes 中的 Agent，负责管理 Pod 的生命周期，包括创建、启动、停止、删除 Pod，以及 Pod 的健康检查。
+Kubelet 是 Kubernetes 中的 Agent，负责管理 Pod 的生命周期，包括创建、启动、停止、删除 Pod，以及 Pod 的健康检查, 并负责汇报当前节点的资源信息和健康状态
 
 #### CNI
 Kubernetes网络模型设计的基础原则是：
