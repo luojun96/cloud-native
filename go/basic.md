@@ -202,6 +202,37 @@ Thread-Cache Malloc: 线程缓存分配
 * 同步锁使用不当
 
 ### Go 内存逃逸
+[link](https://segmentfault.com/a/1190000040450335)
+#### 什么是内存逃逸
+在一段程序代码中，每个函数都有自己的内存区域存放自己的局部变量、返回地址等，这些内存会由编译器在 **栈(Stack)** 中进行分配，每个函数都会分配一个栈帧，在函数运行结束后销毁，但有些变量我们想在函数运行结束后仍然使用，那么就需要把这个变量在 **堆(Heap)** 上分配，这种从“栈”上逃逸到“堆”上的现象就是内存逃逸。
+
+#### 什么是逃逸分析
+逃逸分析就是指程序在编译阶段根据代码中的数据流，对代码中哪些变量需要在栈中分配，哪些变量需要在堆上分配进行静态分析的方法。
+
+#### Go 中的逃逸分析
+source code: `/usr/local/go/src/cmd/compile/internal/escape/escape.go`
+
+```go
+// Escape analysis.
+//
+// Here we analyze functions to determine which Go variables
+// (including implicit allocations such as calls to "new" or "make",
+// composite literals, etc.) can be allocated on the stack. The two
+// key invariants we have to ensure are: 
+// (1) pointers to stack objects cannot be stored in the heap, and 
+// (2) pointers to a stack object
+// cannot outlive that object (e.g., because the declaring function
+// returned and destroyed the object's stack frame, or its space is
+// reused across loop iterations for logically distinct variables).
+//
+```
+
+##### 产生逃逸的场景
+- 函数返回局部指针变量
+- interface类型逃逸
+- 闭包产生的逃逸
+- 变量大小不确定及栈空间不足引发逃逸
+
 
 ### 导致panic的场景
 
@@ -210,3 +241,5 @@ Thread-Cache Malloc: 线程缓存分配
 ### 设计个消息队列
 
 ### 实现超时取消
+
+### 什么时候用Var, 什么时候用 new/make申明变量
