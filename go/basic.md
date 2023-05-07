@@ -235,6 +235,9 @@ source code: `/usr/local/go/src/cmd/compile/internal/escape/escape.go`
 
 
 ### 导致panic的场景
+* Out of Bounds Panics
+* When a division by zero occurs
+* Nil Receivers
 
 ### Go Context的作用
 
