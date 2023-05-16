@@ -11,9 +11,9 @@
 ## 日志收集系统Loki
 Grafana Loki是可以组成功能齐全的日志记录堆栈的一组组件。
 
-* 与其他日志记录系统不同，Lok是基于仅索号!有关日志的元数据的想法而构建的：标签。
+* 与其他日志记录系统不同，Loki是基于仅索号有关日志的元数据的想法而构建的：标签。
 * 日志数据本身被压缩并存储在对象存储（例如S3或GCS）中的块中，甚至存储在文件系统本地。
-* 小素号!和高度压缩的块简化了操作 ，并大大降低了Loki的成本。
+* 小索引和高度压缩的块简化了操作 ，并大大降低了Loki的成本。
 
 ### 基于Loki的日志收集系统
 ![](resources/log_loki.png)
@@ -35,29 +35,45 @@ Grafana Loki是可以组成功能齐全的日志记录堆栈的一组组件。
 #### Loki的架构
 ![](resources/log_loki_arch.png)
 #### Loki的组件
-* Distributor
+* **Distributor**
   * 分配器服务负责处理客户端写入的日志。
   * 一旦分配器接收到日志数据，它就会把它们分成若批次，并将它们并行地发送到多个采集器去。
   * 分配器通过gRPC和采集器进行通信。
   * 它们是无状态的，基于一致性哈希，我们可以根据实际需要对他们进行扩缩容。
-* Ingester
+* **Ingester**
   * 采集器服务负责将日志数据写入长期存储的后端（DynamoDB、S3、Cassandra 等等）。
   * 采集器会校验采集的日志是否乱序。
   * 采集器验证接收到的日志行是按照时间戳递增的顺序接收的，否则日志行将被拒绝并返回错误。
-* Querier
+* **Querier**
   * 查询器服务负责处理 LogQL 查询语向来评估存储在长期存储中的日志数据。
+
 #### Loki的安装
 https://grafana.com/docs/loki/latest/installation/helm/
+
 ```zsh
 helm repo add grafana https://grafana.github.io/helm-charts
 helm repo update
 helm upgrade --install loki grafana/loki-stack --set grafana.enabled=true --set prometheus.enabled=true --set prometheus.alertmanager.persistentVolume.enabled=false --set prometheus.server.persistentVolume.enabled=false
 ```
+
+### 本地打开Loki Grafana
+
+```zsh
+# switch context and namespace
+# change service type to "NodePort"
+kubectl patch svc loki-grafana --type merge -p '{"spec":{"type":"NodePort"}}'
+# get login user from secret
+kubectl get secrets loki-grafana -o jsonpath="{['data']['admin-user']}" | base64 --decode && echo
+# get password
+kubectl get secrets loki-grafana -o jsonpath="{['data']['admin-password']}" | base64 --decode
+```
+
 ## 在生产中的问题
 存在的问题：
+
 * 利用率低
   * 日志大多数目的是给管理员做问题分析用的，但管理员更多的是登陆到节点或者pod里
 做分析，因为日志分析只是整个分析过程中的一部分 ，所以很多时候顺手就把日志看了
-* Beats出:现过锁佳文件系统，docker container无法删除的情况
+* Beats出现过锁佳文件系统，docker container无法删除的情况
 * 与监控系统相比，日志系统的重要度稍低
-* 出现过多次因为日志滚动太快币使得日志收集占用太大网络带宽的情況
+* 出现过多次因为日志滚动太快使得日志收集占用太大网络带宽的情況
