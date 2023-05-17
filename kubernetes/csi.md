@@ -101,3 +101,9 @@ OSD stands for Object Storage Device in Ceph. It is a key component of the Ceph 
 When a client writes data to Ceph, the data is broken down into objects and distributed across multiple OSDs. The OSDs replicate the data to ensure that there are multiple copies of each object, providing high availability and data durability. The OSDs also ensure that data is distributed evenly across the cluster, optimizing performance.
 
 ### CephBlockPool
+
+### Troubleshooting
+* there is modules or deamon crashed health warning, such as `[WRN] overall HEALTH_WARN 1 mgr modules have recently crashed` or `[WRN] mgr module nfs crashed in daemon mgr.b on host rook-ceph-mgr-b-7c6f456db4-bbfzw at 2023-05-17T09:31:18.201441Z`
+  * check crash messages: `ceph crash ls` and `ceph crash info <id>`
+  * try to archive crash info: `ceph crash archive <id>` or `ceph crash archive-all`
+
