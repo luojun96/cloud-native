@@ -1,3 +1,122 @@
+# Istio
+
+<div align="center">
+  <a href="https://istio.io/">
+      <img src="https://github.com/istio/istio/raw/master/logo/istio-bluelogo-whitebackground-unframed.svg"
+          alt="Istio logo" title="Istio" height="50" width="50" />
+  </a>
+</div>
+
+## 目录
+
+## 微服务架构的演变
+### Evolution
+#### Monolith架构
+![](resources/monolith_architecture.png)
+#### Microservice架构
+![](resources/microservice_architecture.png)
+#### 典型的微服务业务场景
+基于微服务的应用架构：
+
+![](resources/app-based-microservice.png)
+
+1. 给服务添加熔断机制，来应对服务故障：
+
+![](resources/bussiness-scenario-of-microservice-0.png)
+![](resources/bussiness-scenario-of-microservice-1.png)
+
+2. 给服务添加负载均衡，服务注册和服务发现：
+
+![](resources/bussiness-scenario-of-microservice-2.png)
+
+3. 给服务添加认证和授权：
+
+![](resources/bussiness-scenario-of-microservice-3.png)
+
+4. 给服务间调用添加TLS
+
+![](resources/bussiness-scenario-of-microservice-4.png)
+
+5. 完整的微服务架构：
+
+![](resources/bussiness-scenario-of-microservice-5.png)
+
+## 微服务到服务网格还缺什么
+### Sidecar的工作原理
+#### 系统边界
+服务治理和业务代码结合在一起：
+
+![](resources/system-boundary-0.png)
+
+分离服务治理和业务代码后：
+
+![](resources/system-boundary-1.png)
+#### Sidecar工作原理
+![](resources/sidecar-work-principle-0.png)
+![](resources/sidecar-work-principle-1.png)
+![](resources/sidecar-work-principle-2.png)
+
+Service Mesh:
+![](resources/service-mesh.png)
+
+### Service Mesh
+- **适应性**
+  - 熔断
+  - 重试
+  - 超时
+  - 负载均衡
+  - 失败处理
+  - Failover
+- **服务发现**
+  - 服务注册
+  - 服务发现
+  - 服务路由
+- **安全和访问控制**
+  - TLS和证书管理
+- **可观察性**
+  - metrics
+  - monitoring
+  - distributed tracing
+  - distributed logging
+- **部署**
+  - 容器
+- **通信**
+  - HTTP
+  - WS
+  - gRPC
+  - TCP
+### 微服务的优劣
+#### 优势
+- **将基础结构逻辑从业务代码中剥离出来**
+  - 分布式tracing
+  - 日志
+- **自由选择技术栈**
+- **帮助业务开发部门只关注业务逻辑**
+#### 劣势
+- **复杂**
+  - 更多的运行实例
+- **可能带来额外的网络跳转**
+  - 每个服务调用都要经过Sidecar
+- **解决了一部分问题，同时要付出代价**
+  - 依然要处理复杂路由，类型映射，与外部系统整合等方面的问题
+- **不解决业务逻辑或服务整合，服务组合等问题**
+### 服务网格可选方案
+![](resources/service-mesh-optional-solutions.png)
+### 什么是服务网格
+
+
+
+
+
+
+
+
+
+
+## 深入理解数据平面Envoy
+## Istio流量管理
+## 跟踪采样
+
 ## Istio架构
 ![](resources/istio_architecture.png)
 ## 数据平面Envoy
