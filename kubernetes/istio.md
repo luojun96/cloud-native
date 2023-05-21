@@ -159,11 +159,21 @@ Istio生成以下类型的遥测数据，以提供对整个服务网络的可观
   - 在服务间的API调用中，策略的应用使得可以对网格间行为进行全面的控制，但对于无需在API级别表达的资源来说，对资源应用策略也同样重要。
   - 因此，策略系统作为独特的服务来维护，具有自己的API，而不是将其放到代理/Sidecar中，这容许服务根据需要直接与其集成。
 
-
-
-
-
 ## 深入理解数据平面Envoy
+### 主流七层代理的比较
+|   |  Envoy | Nginx  | HA Proxy  |
+|---|---|---|---|
+| HTTP/2  | 对HTTP/2有完整支持，同时支持upstream和downstream HTTP/2.  | 从1.9.5开始支持HTTP/2  | HAProxy Enterprise才支持HTTP/2  |
+| Rate Limit  | 通过插件支持限流  | 支持基于配置的限流，只支持基于源IP的限流  |   |
+| ACL  | 基于插件实现四层ACL  | 基于源/目标地址实现ACL  |   |
+| Connection draining  | 支持hot reload, 并且通过share memory实现connection draning的功能 | Nginx Plus收费版支持connection draining  | 支持热启动，但不保证丢弃连接 |
+
+
+
+
+
+
+
 ## Istio流量管理
 ## 跟踪采样
 
