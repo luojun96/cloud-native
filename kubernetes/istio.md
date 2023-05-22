@@ -168,13 +168,59 @@ Istio生成以下类型的遥测数据，以提供对整个服务网络的可观
 | ACL  | 基于插件实现四层ACL  | 基于源/目标地址实现ACL  |   |
 | Connection draining  | 支持hot reload, 并且通过share memory实现connection draning的功能 | Nginx Plus收费版支持connection draining  | 支持热启动，但不保证丢弃连接 |
 
+### Enovy的优势
+- **性能**
+  - 在具备大量特征的同时，Envoy提供极高的吞吐量和低尾部延迟差异，而CPU和RAM消耗却相对较少。
+- **可扩展性**
+  - Envoy在L4和L7都提供了丰富的可插拔过滤器能力，使得用户可以轻松添加开源版本中没有的功能。
+- **API可配置性**
+  - Envoy提供了一组可以通过控制平面服务实现的管理API。如果控制平面实现所有的API，则可以使用通过引导配置在整个基础架构上运行Enovy。所有进一步的配置更改通过管理服务器以无缝方式发送传送，因此Enovy从不需要重新启动。这使得Envoy成为通用数据平台，当它与一个足够复杂的控制平面相结合时，会极大地降低整体运维的复杂性。
 
+### Envoy线程模式
+- **Envoy采用单进程多线程模式**
+  - 主线程负责协调
+  - 子线程负责监听过滤和转发
+- 当某连接被监听器接收，那么该连接的全部生命周期会与某线程绑定
+- Envoy基于非阻塞模式（Epoll）
+- **建议Envoy配置的worker数量与Envoy所在的硬件线程数一致**
 
+### Envoy架构
+![](resources/envoy_architecture.png)
 
+### v1 API的缺点和v2的引入
+- **v1 API仅使用JSON/REST，本质上是轮询**，缺点有：
+  - 尽管Envoy在内部使用的是JSON模式，但API本身并不是强一致性，而且安全地实现他们的通用服务器也很难。
+  - 虽然轮询工作在实践中是很正常的用法，但更强大的控制平面更喜欢streaming API, 当其就绪后，可以将更新推送给每个Envoy。这可以将更新传播时间从30-60s降低到250-500ms，即使在极其庞大的部署中也是如此。
+- **v2 API具有以下属性**
+  - 新API模式使用protobuf 3指定，并同时以gRPC和REST + JSON/YAML端点实现。
+  - 它们被定义在一个名为envoy-api的新的专用源码仓库中。protobuf3的使用意味着这些API是强一致性的，同时仍然通过protobuf3的JSON/YAML表示支持JSON/YAML的变体。
+  - 专用仓库的使用意味着项目可以更容易的使用API并用gRPC支持的语言生成存根（实际上，对于希望使用它的用户，我们将继续支持基于REST的JSON/YAML变体）
+  - 它们是streaming API，这意味着控制平面可以将更新推送到Envoy，而不是Envoy轮询控制平面。
+### xDS - Envoy的发现机制
+- 配置
+  - **Listener Discovery Service (LDS)**: 用于配置Envoy的监听器
+    - **Route Discovery Service (RDS)**: 用于配置Envoy的路由
+- 状态
+  - **Cluster Discovery Service (CDS)**: 用于配置Envoy的集群
+    - **Endpoint Discovery Service (EDS)**: 用于配置Envoy的终端
+- 安全
+  - **Secret Discovery Service (SDS)**: 用于配置Envoy的TLS证书
+- 健康检查
+  - **Health Discovery Service (HDS)**: 用于配置Envoy的健康检查
+- 协调
+  - **Aggregated Discovery Service (ADS)**: 用于配置Envoy的聚合服务
 
-
+### Envoy的过滤器模式
+![](resources/envoy_filter.png) 
 
 ## Istio流量管理
+### 流量管理
+- Gateway
+- VirtualService
+- DestinationRule
+- ServiceEntry
+- WorkloadEntry
+- Sidecar
 ## 跟踪采样
 
 ## Istio架构
