@@ -611,11 +611,71 @@ check config dump:
 #### 实际例子：
 ![](resources/istio_demo.png)
 
-#### 流量管理
+### 流量管理
 - **Traffic splitting from infrastructure scaling**: proportion of traffic routed to a version is dependent of number of instances of that version.
 ![](resources/traffic_splitting_from_infrastructure_scaling.png)
 - **Content-based steering**: traffic is routed to a version based on HTTP headers, cookies, or other information in the request. The content of a request can be used to determinie the destination of a request.
 ![](resources/content_based_steering.png)
+
+#### 请求路由
+**特定网格中服务的规范表示由Pilot提供**。服务中的Istio模型和底层平台（Kubernetes、Mesos以及Cloud Foundry）中的表达无关。特定平台的适配器负责从各自平台中获取元数据的各种字段，然后对服务模型进行填充。
+
+**Istio引入了服务版本的概念，可以通过版本（v1、v2）或环境（staging, production）对服务进行进一步细分**。这些版本不一定是不同的API版本：它们可能是部署在不同环境中的同一服务的不同迭代。使用这种方式的常见场景包括A/B测试或金丝雀部署。
+
+**Istio的流量路由规则可以根据服务版本来对服务之间的流量进行附加控制**
+
+#### 服务之间的通信
+**服务的客户端不知道服务不同版本间的差异**。它们可以使用服务的主机名或者IP地址继续访问服务。Envoy sidecar/代理拦截并转发客户端与服务器端之间的所有请求和响应。
+
+**Istio支持HTTP、gRPC、TCP和TLS协议**。Istio的流量管理功能可以应用于所有这些协议。
+
+Istio还为同一服务的多个实例提供流量负载均衡。可以在服务发现和负载均衡中找到更多信息。
+
+Istio不提供DNS。**应用程序可以使用底层平台中存在的DNS服务（kube-dns）来解析FQDN**。
+
+#### Ingress 和 Egress
+**Istio假定进入和离开网络的所有流量都会通过Envoy代理进行传输**。
+
+通过将Envoy代理部署在服务之前，运维人员可以针对面向用户的服务进行A/B测试、金丝雀部署、流量控制和故障注入。**Istio支持多种入口网关，包括HTTP、gRPC和TCP流量**。
+
+类似地，通过使用Envoy将流量路由到外部Web服务(比如，访问Maps API或视频服务API)的方式，运维人员可以对流量进行控制，比如添加超时控制，重试，熔断等功能，同时还能从服务连接中获取各种细节指标。**Istio支持HTTP、gRPC和TCP流量的出口网关**。
+
+![](resources/istio_ingress_egress.png)
+
+#### 服务发现和负载均衡
+**Istio负载均衡网络中实例之间的通信**。
+
+Istio假定存在服务注册表，以跟踪应用程序中服务的实例。它还假定服务的新实例自动注册到服务注册表，并且不健康的实例将被自动删除。
+
+Pilot使用来自服务注册的信息，并提供与平台无关的服务发现接口。网格中的Envoy实例执行服务发现，并相应地动态更新其负载均衡池。
+
+网格中的服务使用其DNS名称访问彼此。服务的所有HTTP流量都会通过Envoy自动重新路由。Envoy在负载均衡池中的实例之间分发流量。
+
+- **支持的负载均衡算法**
+  - 轮询（Round Robin）：将请求依次分配给后端服务实例，每个实例接收到的请求数相等。
+  - 最少连接（Least Connections）：将请求分配给当前连接数最少的后端服务实例。
+  - 随机（Random）：随机选择一个后端服务实例来处理请求。
+  - 加权轮询（Weighted Round Robin）：将请求分配给后端服务实例，但是可以为每个实例分配不同的权重，以便更多的请求被分配给更强大的实例。
+  - 加权最连接（Weighted Least Connections）：将请求分配给当前连接数最少的后端服务实例，但是可以为每个实例分配不同权重，以便更多的请求被分配给更强大的实例。
+- **支持的负载均衡模式**
+  - Simple：简单的负载均衡模式，将请求均匀地分配给后端服务例。
+  - Consistent Hash：使用哈希函数将请求路由到特定的后端服务实例，以便在缓存和会话管理等方实现更好的性能。
+  - Least Request：将请求分配给当前处理请求最少的后端服务实例。
+  - Random：随机选择一个后端服务实例来处理请求。
+
+#### 健康检查和服务熔断
+**Envoy会定期检查池中每个实例的运行状况**。Envoy遵循熔断器风格模式，根据健康检查API调用的失败率将实例分类为不健康和健康两种。当给定实例的健康检查失败次数超过预定阀值时，将会从负载均衡池中弹出。类似地，当通过的健康检查成功数超过预定阀值时，该实例将会被添加会负载均衡池。
+
+**服务可以通过使用HTTP 503响应健康检查来主动减轻负担。在这种情况下，服务实例将立即从调用者的负载均衡池中删除。**
+
+#### 故障处理
+![](resources/istio_fault_handler.png)
+
+#### 微调
+**Istio的流量管理规则允许运维人员为每个服务/版本设置故障恢复的全局默认值**。然而，服务的消费者也可以通过特殊的HTTP头提供请求级别值覆盖超时和重试默认值。在Envoy代理的实现中，对应的Header分别是x-envoy-upstream-rq-timeout-ms和x-envoy-max-retries。
+
+
+
 
 
 ## 跟踪采样
