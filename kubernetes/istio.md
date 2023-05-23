@@ -221,6 +221,403 @@ Istio生成以下类型的遥测数据，以提供对整个服务网络的可观
 - ServiceEntry
 - WorkloadEntry
 - Sidecar
+
+### Istio的流量劫持机制
+#### 为用户应用注入Sidecar
+- 自动注入
+- 手动注入
+  - `istioctl kube-inject -f <your-app-spec>.yaml | kubectl apply -f -`
+  - `kubectl apply -f <(istioctl kube-inject -f <your-app-spec>.yaml)`
+#### 注入后的结果
+- 注入了 init-container, istio-init
+  - istio-init 会修改应用的iptables规则，将所有的流量都重定向到sidecar
+    - `istio-iptables -p 15001 -z 15006 -u 1337 -m REDIRECT -i * -x -b 9080 -d 15090,15021,15020`
+- 注入了 sidecar-container, istio-proxy
+  - istio-proxy 会拦截所有的流量，根据配置的规则进行处理
+    - `istioctl proxy-config routes <pod-name>.<namespace>`
+
+#### Init Container
+**将应用容器的所有流量都转发到Envoy的15001端口。**
+
+使用istio-proxy用户身份运行，UID为1337， 即Envoy所处的用户空间，这也是istio-proxy的默认使用的用户（YAML配置中的runAsUser字段）。
+
+使用默认的REDIRECT模式，将所有流量重定向到Envoy的15006端口。
+
+将所有的出站流量重定向到15001端口，以便Envoy可以拦截它们。
+
+查看injected pod里的iptables规则：
+- 进入所在的host, 找到对应的pod的network namespace
+  - `docker ps | grep <pod-name>`
+  - `docker inspect <container-id> | grep -i pid`
+- 进入network namespace
+  - `nsenter -t <pid> -n`
+- 查看iptables规则
+  - `iptables -t nat -L -n -v` or `iptables-save -t nat`
+
+```zsh
+// 所有入站流量走ISTIO_INBOUND链
+-A PREROUTING -p tcp -j ISTIO_INBOUND
+
+// 所有出站流量走ISTIO_OUTPUT链
+-A OUTPUT -p tcp -j ISTIO_OUTPUT
+
+// ISTIO_INBOUND链, 忽略ssh,health_check等端口
+-A ISTIO_INBOUND -p tcp -m tcp --dport 22 -j RETURN
+-A ISTIO_INBOUND -p tcp -m tcp --dport 15090 -j RETURN
+-A ISTIO_INBOUND -p tcp -m tcp --dport 15021 -j RETURN
+-A ISTIO_INBOUND -p tcp -m tcp --dport 15020 -j RETURN
+
+// 所有入站TCP流量走ISTIO_REDIRECT链
+-A ISTIO_INBOUND -p tcp -j ISTIO_REDIRECT
+
+// TCP流量转发到15006端口
+-A ISTIO_REDIRECT -p tcp -j REDIRECT --to-ports 15006
+
+// loopback passthrough
+-A ISTIO_OUTPUT -s 127.0.0.1/32 -o lo -j RETURN
+
+// 从loopback口出来，目标非本地地址，owner是envoy，交由ISTIO_IN_REDIRECT链处理
+-A ISTIO_OUTPUT ! -d 127.0.0.1/32 -o lo -m owner --uid-owner 1337 -j ISTIO_IN_REDIRECT
+
+// 从loopback口出来，owner不是envoy，return
+-A ISTIO_OUTPUT -o lo -m owner ! --uid-owner 1337 -j RETURN
+
+// owner是envoy, return
+-A ISTIO_IN_REDIRECT -m owner --uid-owner 1337 -j RETURN
+
+// 从loopback口出来，目标非本地地址，group owner是envoy，交由ISTIO_IN_REDIRECT链处理
+-A ISTIO_OUTPUT ! -d 127.0.0.1/32 -o lo -m owner --gid-owner 1337 -j ISTIO_IN_REDIRECT
+
+// 从loopback口出来，group owner不是envoy，return
+-A ISTIO_OUTPUT -o lo -m owner ! --gid-owner 1337 -j RETURN
+
+// group owner是envoy, return
+-A ISTIO_IN_REDIRECT -m owner --gid-owner 1337 -j RETURN
+
+// 目标是本地地址，return
+-A ISTIO_OUTPUT -d 127.0.0.1/32 -j RETURN
+
+// 如果以上规则都不匹配，则交由ISTIO_REDIRECT链处理
+-A ISTIO_OUTPUT -j ISTIO_REDIRECT
+
+// ISTIO_REDIRECT链, TCP流量转发到15001端口
+-A ISTIO_REDIRECT -p tcp -j REDIRECT --to-ports 15001
+```
+
+#### Sidecar container
+Istio-proxy的主要功能是拦截所有的流量，根据配置的规则进行处理。
+
+Istio-proxy的配置信息存储在Pilot中，Istio-proxy会定期从Pilot中拉取最新的配置信息。
+
+Istio-proxy会将所有的流量转发到15001端口，以便Envoy可以拦截它们。
+
+Istio会生成以下监听器：
+- **0.0.0.0:15001** 上的监听器接收进出Pod的所有流量，然后将请求移交给虚拟监听器。
+- 每个service IP一个虚拟监听器，每个出站TCP/HTTPS流量一个非HTTP监听器。
+- 每个Pod入站流量暴露的端口一个虚拟监听器。
+- 每个出站HTTP流量的HTTP 0.0.0.0 端口一个虚拟监听器。
+
+查看listener配置：
+- `istioctl proxy-config listener <pod-name>.<namespace> --port 15001 -o json`
+
+```json
+    {
+        "name": "virtualOutbound",
+        "address": {
+            "socketAddress": {
+                "address": "0.0.0.0",
+                "portValue": 15001
+            }
+        },
+        "filterChains": [
+            {
+                "filterChainMatch": {
+                    "destinationPort": 15001
+                },
+                "filters": [
+                    {
+                        "name": "istio.stats",
+                        "typedConfig": {
+                            "@type": "type.googleapis.com/udpa.type.v1.TypedStruct",
+                            "typeUrl": "type.googleapis.com/stats.PluginConfig",
+                            "value": {}
+                        }
+                    },
+                    {
+                        "name": "envoy.filters.network.tcp_proxy",
+                        "typedConfig": {
+                            "@type": "type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy",
+                            "statPrefix": "BlackHoleCluster",
+                            "cluster": "BlackHoleCluster"
+                        }
+                    }
+                ],
+                "name": "virtualOutbound-blackhole"
+            },
+            {
+                "filters": [
+                    {
+                        "name": "istio.stats",
+                        "typedConfig": {
+                            "@type": "type.googleapis.com/udpa.type.v1.TypedStruct",
+                            "typeUrl": "type.googleapis.com/stats.PluginConfig",
+                            "value": {}
+                        }
+                    },
+                    {
+                        "name": "envoy.filters.network.tcp_proxy",
+                        "typedConfig": {
+                            "@type": "type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy",
+                            "statPrefix": "PassthroughCluster",
+                            "cluster": "PassthroughCluster",
+                            "accessLog": [
+                                {
+                                    "name": "envoy.access_loggers.file",
+                                    "typedConfig": {
+                                        "@type": "type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog",
+                                        "path": "/dev/stdout",
+                                        "logFormat": {
+                                            "textFormatSource": {
+                                                "inlineSting": ""
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "name": "virtualOutbound-catchall-tcp"
+            }
+        ],
+        "useOriginalDst": true,
+        "trafficDirection": "OUTBOUND",
+        "accessLog": [
+            {
+                "name": "envoy.access_loggers.file",
+                "filter": {
+                    "responseFlagFilter": {
+                        "flags": [
+                            "NR"
+                        ]
+                    }
+                },
+                "typedConfig": {
+                    "@type": "type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog",
+                    "path": "/dev/stdout",
+                    "logFormat": {
+                        "textFormatSource": {
+                            "inlineSting": ""
+                        }
+                    }
+                }
+            }
+        ]
+    }
+
+```
+
+check config dump:
+- `istioctl proxy-config dump <pod-name>.<namespace> -o json`
+- 进入Pod中，执行`curl http://localhost:15000/config_dump`，查看Envoy的配置信息
+
+我们的请求是到“80”端口的HTTP出站请求，这意味着它被切换到“0.0.0.0:80”虚拟监听器。然后，此监听器在其配置的RDS中查找路由配置。在这种情况下，它将查找有Pilot配置的RDS中的路由“80”（通过ADS）
+
+`istioctl proxy-config listener nginx-deployment-77b4fdf86c-rf697 --port 80 --address 0.0.0.0 -o json`
+
+```json
+[
+    {
+        "name": "0.0.0.0_80",
+        "address": {
+            "socketAddress": {
+                "address": "0.0.0.0",
+                "portValue": 80
+            }
+        },
+        "filterChains": [
+            {
+                "filterChainMatch": {
+                    "transportProtocol": "raw_buffer",
+                    "applicationProtocols": [
+                        "http/1.1",
+                        "h2c"
+                    ]
+                },
+                "filters": [
+                    {
+                        "name": "envoy.filters.network.http_connection_manager",
+                        "typedConfig": {
+                            "@type": "type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager",
+                            "statPrefix": "outbound_0.0.0.0_80",
+                            "rds": {
+                                "configSource": {
+                                    "ads": {},
+                                    "initialFetchTimeout": "0s",
+                                    "resourceApiVersion": "V3"
+                                },
+                                "routeConfigName": "80"
+                            },
+                            "httpFilters": [
+                            ],
+                            "tracing": {
+                            },
+                            "streamIdleTimeout": "0s",
+                            "accessLog": [
+                            ],
+                            "useRemoteAddress": false,
+                            "upgradeConfigs": [
+                                {
+                                    "upgradeType": "websocket"
+                                }
+                            ],
+                            "normalizePath": true,
+                            "pathWithEscapedSlashesAction": "KEEP_UNCHANGED",
+                            "requestIdExtension": {
+                                "typedConfig": {
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        ],
+        "defaultFilterChain": {
+            "filterChainMatch": {},
+            "filters": [
+                {
+                    "name": "istio.stats",
+                    "typedConfig": {
+                        "@type": "type.googleapis.com/udpa.type.v1.TypedStruct",
+                        "typeUrl": "type.googleapis.com/stats.PluginConfig",
+                        "value": {}
+                    }
+                },
+                {
+                    "name": "envoy.filters.network.tcp_proxy"
+                }
+            ],
+            "name": "PassthroughFilterChain"
+        },
+        "listenerFilters": [
+            {
+                "name": "envoy.filters.listener.tls_inspector",
+                "typedConfig": {
+                    "@type": "type.googleapis.com/envoy.extensions.filters.listener.tls_inspector.v3.TlsInspector"
+                }
+            },
+            {
+                "name": "envoy.filters.listener.http_inspector",
+                "typedConfig": {
+                    "@type": "type.googleapis.com/envoy.extensions.filters.listener.http_inspector.v3.HttpInspector"
+                }
+            }
+        ],
+        "listenerFiltersTimeout": "0s",
+        "continueOnListenerFiltersTimeout": true,
+        "trafficDirection": "OUTBOUND",
+        "accessLog": [
+        ],
+        "bindToPort": false
+    }
+]
+
+```
+
+此集群配置为从Pilot(通过ADS)检索关联的端点。因此，Envoy将ServiceName字段作为密钥，以检索与该服务关联的所有端点，并将请求代理到其中一个端点。
+
+`istioctl pc clusters nginx-deployment-77b4fdf86c-rf697 --fqdn nginx.sidecar.svc.cluster.local -o json`
+
+```json
+[
+  {
+    "transportSocketMatches": [
+      {
+        "name": "tlsMode-istio",
+        "match": {
+          "tlsMode": "istio"
+        },
+        "transportSocket": {
+          "name": "envoy.transport_sockets.tls",
+          "typedConfig": {
+            "sni": "outbound_.80_._.nginx.sidecar.svc.cluster.local"
+          }
+        }
+      },
+      {
+        "name": "tlsMode-disabled",
+        "match": {},
+        "transportSocket": {
+          "name": "envoy.transport_sockets.raw_buffer",
+          "typedConfig": {
+            "@type": "type.googleapis.com/envoy.extensions.transport_sockets.raw_buffer.v3.RawBuffer"
+          }
+        }
+      }
+    ],
+    "name": "outbound|80||nginx.sidecar.svc.cluster.local",
+    "type": "EDS",
+    "edsClusterConfig": {
+      "edsConfig": {
+        "ads": {},
+        "initialFetchTimeout": "0s",
+        "resourceApiVersion": "V3"
+      },
+      "serviceName": "outbound|80||nginx.sidecar.svc.cluster.local"
+    },
+    "connectTimeout": "10s",
+    "lbPolicy": "LEAST_REQUEST",
+    "circuitBreakers": {
+      "thresholds": [
+        {
+          "maxConnections": 4294967295,
+          "maxPendingRequests": 4294967295,
+          "maxRequests": 4294967295,
+          "maxRetries": 4294967295,
+          "trackRemaining": true
+        }
+      ]
+    },
+    "commonLbConfig": {
+      "localityWeightedLbConfig": {}
+    },
+    "metadata": {
+      "filterMetadata": {
+        "istio": {
+          "default_original_port": 80,
+          "services": [
+            {
+              "host": "nginx.sidecar.svc.cluster.local",
+              "name": "nginx",
+              "namespace": "sidecar"
+            }
+          ]
+        }
+      }
+    },
+    "filters": [
+      {
+        "name": "istio.metadata_exchange",
+        "typedConfig": {
+          "@type": "type.googleapis.com/envoy.tcp.metadataexchange.config.MetadataExchange",
+          "protocol": "istio-peer-exchange"
+        }
+      }
+    ]
+  }
+]
+```
+
+#### 实际例子：
+![](resources/istio_demo.png)
+
+#### 流量管理
+- **Traffic splitting from infrastructure scaling**: proportion of traffic routed to a version is dependent of number of instances of that version.
+![](resources/traffic_splitting_from_infrastructure_scaling.png)
+- **Content-based steering**: traffic is routed to a version based on HTTP headers, cookies, or other information in the request. The content of a request can be used to determinie the destination of a request.
+![](resources/content_based_steering.png)
+
+
 ## 跟踪采样
 
 ## Istio架构
