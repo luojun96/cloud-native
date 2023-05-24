@@ -1,5 +1,3 @@
-# Istio
-
 <div align="center">
   <a href="https://istio.io/">
       <img src="https://github.com/istio/istio/raw/master/logo/istio-bluelogo-whitebackground-unframed.svg"
@@ -7,15 +5,42 @@
   </a>
 </div>
 
-## 目录
+<!-- ToC start -->
+# 目录
+- [微服务架构的演变](#微服务架构的演变)
+  - [Evolution](#evolution)
+    - [Monolith架构](#monolith架构)
+    - [Microservice架构](#microservice架构)
+    - [典型的微服务业务场景](#典型的微服务业务场景)
+- [微服务到服务网格还缺什么](#微服务到服务网格还缺什么)
+  - [Sidecar的工作原理](#sidecar的工作原理)
+    - [系统边界](#系统边界)
+    - [Sidecar工作机制](#sidecar工作机制)
+  - [Service Mesh](#service-mesh)
+  - [微服务的优劣](#微服务的优劣)
+    - [优势](#优势)
+    - [劣势](#劣势)
+  - [服务网格可选方案](#服务网格可选方案)
+  - [什么是服务网格](#什么是服务网格)
+  - [为什么要使用Istio](#为什么要使用istio)
+  - [Istio功能概览](#Istio功能概览)
+    - [流量管理](#流量管理)
+    - [安全](#安全)
+    - [可观察性](#可观察性)
+    - [Istio架构演进](#Istio架构演进)
+    - [设计目标](#设计目标)
+- [深入理解数据平面Envoy](#深入理解数据平面Envoy)
+- [Istio流量管理](#Istio流量管理)
 
-## 微服务架构的演变
-### Evolution
-#### Monolith架构
+
+<!-- ToC end -->
+# 微服务架构的演变
+## Evolution
+### Monolith架构
 ![](resources/monolith_architecture.png)
-#### Microservice架构
+### Microservice架构
 ![](resources/microservice_architecture.png)
-#### 典型的微服务业务场景
+### 典型的微服务业务场景
 基于微服务的应用架构：
 
 ![](resources/app-based-microservice.png)
@@ -41,9 +66,9 @@
 
 ![](resources/bussiness-scenario-of-microservice-5.png)
 
-## 微服务到服务网格还缺什么
-### Sidecar的工作原理
-#### 系统边界
+# 微服务到服务网格还缺什么
+## Sidecar的工作原理
+### 系统边界
 服务治理和业务代码结合在一起：
 
 ![](resources/system-boundary-0.png)
@@ -51,15 +76,16 @@
 分离服务治理和业务代码后：
 
 ![](resources/system-boundary-1.png)
-#### Sidecar工作原理
+### Sidecar工作机制
 ![](resources/sidecar-work-principle-0.png)
 ![](resources/sidecar-work-principle-1.png)
 ![](resources/sidecar-work-principle-2.png)
 
 Service Mesh:
+
 ![](resources/service-mesh.png)
 
-### Service Mesh
+## Service Mesh
 - **适应性**
   - 熔断
   - 重试
@@ -85,14 +111,14 @@ Service Mesh:
   - WS
   - gRPC
   - TCP
-### 微服务的优劣
-#### 优势
+## 微服务的优劣
+### 优势
 - **将基础结构逻辑从业务代码中剥离出来**
   - 分布式tracing
   - 日志
 - **自由选择技术栈**
 - **帮助业务开发部门只关注业务逻辑**
-#### 劣势
+### 劣势
 - **复杂**
   - 更多的运行实例
 - **可能带来额外的网络跳转**
@@ -100,35 +126,35 @@ Service Mesh:
 - **解决了一部分问题，同时要付出代价**
   - 依然要处理复杂路由，类型映射，与外部系统整合等方面的问题
 - **不解决业务逻辑或服务整合，服务组合等问题**
-### 服务网格可选方案
+## 服务网格可选方案
 ![](resources/service-mesh-optional-solutions.png)
-### 什么是服务网格
+## 什么是服务网格
 服务网格（Service Mesh）这个术语通常用于描述构成这些应用程序的微服务网络及其应用之间的交互。随着规模和复杂性的增长，服务网格越来越难以理解和管理。
 
 它的需求包括：服务发现，负载均衡，故障恢复，指标收集和监控以及通常更加复杂的运维需求，例如A/B测试，金丝雀发布，限流，访问控制和端到端认证等。服务网格提供了一种方法来解决这些问题，而不需要对应用程序进行任何代码更改。
 
-### 为什么要使用Istio
+## 为什么要使用Istio
 - HTTP，gRPC，WebSockets和TCP流量的自动负载均衡
 - 通过丰富的路由规则、重试、故障转移和故障注入、可以对流量行为进行细粒度控制
 - 可插入的策略层和配置API，支持访问控制、速率限制和配额
 - 对出入集群入口和出口中所有流量的自动度量指标、日志记录和跟踪
 - 通过强大的基于身份的验证和授权，在集群中实现安全的服务间通信
 
-### Istio功能概览
+## Istio功能概览
 ![](resources/istio-features-overview.png)
 
-#### 流量管理
+### 流量管理
 - **连接**
   - 通过简单的规则配置和流量路由，可以控制服务之间的流量和API调用。Istio简化了断路器、超时和重试等服务级别属性的配置，并且可以轻松设置A/B测试、金丝雀部署和机遇百分比的流量分割的分阶段部署等重要任务。
 - **控制**
   - 通过更好地了解流量和开箱即用的故障恢复功能，可以在问题出现之前先发现问题，使调用更可靠，并且使得网络更加健壮。
 
-#### 安全
+### 安全
 - **使得开发人员可以专注于应用程序级别的安全性**
   - Istio通过提供一种统一的方法来强制执行策略和配置，从而简化了安全性的复杂性。Istio的安全功能包括服务间的身份验证、授权和加密通信，从而保护服务间的流量，并减轻了应用程序代码中的安全性功能的负担。
 - **虽然Istio与平台无关，但将其与Kubernetes（或基础架构）网络策略结合使用，其优势会更大，包括在网络和应用层保护Pod间或服务间通信的能力**
 
-#### 可观察性
+### 可观察性
 Istio生成以下类型的遥测数据，以提供对整个服务网络的可观察性：
 - **指标**：Istio基于4个监控的黄金指标（延迟、流量、错误和饱和）生成了一系列服务指标。Istio还为网络控制平面提供了更详细的指标。除此以外还提供了一组默认的基于这些指标的网络监控仪表板。
 - **分布式追踪**：Istio通过集成Zipkin和Jaeger，提供了对服务间调用的分布式追踪。Istio还提供了一个默认的基于Kiali的服务拓扑图，以帮助您可视化服务网格。
@@ -136,7 +162,7 @@ Istio生成以下类型的遥测数据，以提供对整个服务网络的可观
 
 <p><span style="color:yellow;font-weight: bold">所有这些功能可以更有效地设置、监控和实施服务上的SLO，快速有效地检测和修复问题。</span></p>
 
-### Istio架构演进
+## Istio架构演进
 - **架构演进**
   - 从微服务回归单体架构
   ![](resources/istio-architecture-evolution.png)
@@ -145,7 +171,7 @@ Istio生成以下类型的遥测数据，以提供对整个服务网络的可观
 - **控制平面**
   - 负责管理和配置代理来路由流量。
 
-### 设计目标
+## 设计目标
 - **最大透明度**
   - Istio将自身自动注入到服务间所有的网络路径中，运维和开发人员只需要付出很少的代价就可以从中受益。
   - Istio使用Sidecar代理捕获流量，并且在尽可能的地方自动编程网络层，以路由流量通过这些代理，而无需对已部署的应用程序代码进行改动。
@@ -159,8 +185,8 @@ Istio生成以下类型的遥测数据，以提供对整个服务网络的可观
   - 在服务间的API调用中，策略的应用使得可以对网格间行为进行全面的控制，但对于无需在API级别表达的资源来说，对资源应用策略也同样重要。
   - 因此，策略系统作为独特的服务来维护，具有自己的API，而不是将其放到代理/Sidecar中，这容许服务根据需要直接与其集成。
 
-## 深入理解数据平面Envoy
-### 主流七层代理的比较
+# 深入理解数据平面Envoy
+## 主流七层代理的比较
 |   |  Envoy | Nginx  | HA Proxy  |
 |---|---|---|---|
 | HTTP/2  | 对HTTP/2有完整支持，同时支持upstream和downstream HTTP/2.  | 从1.9.5开始支持HTTP/2  | HAProxy Enterprise才支持HTTP/2  |
@@ -168,7 +194,7 @@ Istio生成以下类型的遥测数据，以提供对整个服务网络的可观
 | ACL  | 基于插件实现四层ACL  | 基于源/目标地址实现ACL  |   |
 | Connection draining  | 支持hot reload, 并且通过share memory实现connection draning的功能 | Nginx Plus收费版支持connection draining  | 支持热启动，但不保证丢弃连接 |
 
-### Enovy的优势
+## Enovy的优势
 - **性能**
   - 在具备大量特征的同时，Envoy提供极高的吞吐量和低尾部延迟差异，而CPU和RAM消耗却相对较少。
 - **可扩展性**
@@ -176,7 +202,7 @@ Istio生成以下类型的遥测数据，以提供对整个服务网络的可观
 - **API可配置性**
   - Envoy提供了一组可以通过控制平面服务实现的管理API。如果控制平面实现所有的API，则可以使用通过引导配置在整个基础架构上运行Enovy。所有进一步的配置更改通过管理服务器以无缝方式发送传送，因此Enovy从不需要重新启动。这使得Envoy成为通用数据平台，当它与一个足够复杂的控制平面相结合时，会极大地降低整体运维的复杂性。
 
-### Envoy线程模式
+## Envoy线程模式
 - **Envoy采用单进程多线程模式**
   - 主线程负责协调
   - 子线程负责监听过滤和转发
@@ -196,7 +222,7 @@ Istio生成以下类型的遥测数据，以提供对整个服务网络的可观
   - 它们被定义在一个名为envoy-api的新的专用源码仓库中。protobuf3的使用意味着这些API是强一致性的，同时仍然通过protobuf3的JSON/YAML表示支持JSON/YAML的变体。
   - 专用仓库的使用意味着项目可以更容易的使用API并用gRPC支持的语言生成存根（实际上，对于希望使用它的用户，我们将继续支持基于REST的JSON/YAML变体）
   - 它们是streaming API，这意味着控制平面可以将更新推送到Envoy，而不是Envoy轮询控制平面。
-### xDS - Envoy的发现机制
+## xDS - Envoy的发现机制
 - 配置
   - **Listener Discovery Service (LDS)**: 用于配置Envoy的监听器
     - **Route Discovery Service (RDS)**: 用于配置Envoy的路由
@@ -210,11 +236,11 @@ Istio生成以下类型的遥测数据，以提供对整个服务网络的可观
 - 协调
   - **Aggregated Discovery Service (ADS)**: 用于配置Envoy的聚合服务
 
-### Envoy的过滤器模式
+## Envoy的过滤器模式
 ![](resources/envoy_filter.png) 
 
-## Istio流量管理
-### 流量管理
+# Istio流量管理
+## 流量管理
 - Gateway
 - VirtualService
 - DestinationRule
@@ -222,13 +248,13 @@ Istio生成以下类型的遥测数据，以提供对整个服务网络的可观
 - WorkloadEntry
 - Sidecar
 
-### Istio的流量劫持机制
-#### 为用户应用注入Sidecar
+## Istio的流量劫持机制
+### 为用户应用注入Sidecar
 - 自动注入
 - 手动注入
   - `istioctl kube-inject -f <your-app-spec>.yaml | kubectl apply -f -`
   - `kubectl apply -f <(istioctl kube-inject -f <your-app-spec>.yaml)`
-#### 注入后的结果
+### 注入后的结果
 - 注入了 init-container, istio-init
   - istio-init 会修改应用的iptables规则，将所有的流量都重定向到sidecar
     - `istio-iptables -p 15001 -z 15006 -u 1337 -m REDIRECT -i * -x -b 9080 -d 15090,15021,15020`
@@ -236,7 +262,7 @@ Istio生成以下类型的遥测数据，以提供对整个服务网络的可观
   - istio-proxy 会拦截所有的流量，根据配置的规则进行处理
     - `istioctl proxy-config routes <pod-name>.<namespace>`
 
-#### Init Container
+### Init Container
 **将应用容器的所有流量都转发到Envoy的15001端口。**
 
 使用istio-proxy用户身份运行，UID为1337， 即Envoy所处的用户空间，这也是istio-proxy的默认使用的用户（YAML配置中的runAsUser字段）。
@@ -304,7 +330,7 @@ Istio生成以下类型的遥测数据，以提供对整个服务网络的可观
 -A ISTIO_REDIRECT -p tcp -j REDIRECT --to-ports 15001
 ```
 
-#### Sidecar container
+### Sidecar container
 Istio-proxy的主要功能是拦截所有的流量，根据配置的规则进行处理。
 
 Istio-proxy的配置信息存储在Pilot中，Istio-proxy会定期从Pilot中拉取最新的配置信息。
@@ -608,23 +634,23 @@ check config dump:
 ]
 ```
 
-#### 实际例子：
+### 实际例子：
 ![](resources/istio_demo.png)
 
-### 流量管理
+## 流量管理
 - **Traffic splitting from infrastructure scaling**: proportion of traffic routed to a version is dependent of number of instances of that version.
 ![](resources/traffic_splitting_from_infrastructure_scaling.png)
 - **Content-based steering**: traffic is routed to a version based on HTTP headers, cookies, or other information in the request. The content of a request can be used to determinie the destination of a request.
 ![](resources/content_based_steering.png)
 
-#### 请求路由
+### 请求路由
 **特定网格中服务的规范表示由Pilot提供**。服务中的Istio模型和底层平台（Kubernetes、Mesos以及Cloud Foundry）中的表达无关。特定平台的适配器负责从各自平台中获取元数据的各种字段，然后对服务模型进行填充。
 
 **Istio引入了服务版本的概念，可以通过版本（v1、v2）或环境（staging, production）对服务进行进一步细分**。这些版本不一定是不同的API版本：它们可能是部署在不同环境中的同一服务的不同迭代。使用这种方式的常见场景包括A/B测试或金丝雀部署。
 
 **Istio的流量路由规则可以根据服务版本来对服务之间的流量进行附加控制**
 
-#### 服务之间的通信
+### 服务之间的通信
 **服务的客户端不知道服务不同版本间的差异**。它们可以使用服务的主机名或者IP地址继续访问服务。Envoy sidecar/代理拦截并转发客户端与服务器端之间的所有请求和响应。
 
 **Istio支持HTTP、gRPC、TCP和TLS协议**。Istio的流量管理功能可以应用于所有这些协议。
@@ -633,7 +659,7 @@ Istio还为同一服务的多个实例提供流量负载均衡。可以在服务
 
 Istio不提供DNS。**应用程序可以使用底层平台中存在的DNS服务（kube-dns）来解析FQDN**。
 
-#### Ingress 和 Egress
+### Ingress 和 Egress
 **Istio假定进入和离开网络的所有流量都会通过Envoy代理进行传输**。
 
 通过将Envoy代理部署在服务之前，运维人员可以针对面向用户的服务进行A/B测试、金丝雀部署、流量控制和故障注入。**Istio支持多种入口网关，包括HTTP、gRPC和TCP流量**。
@@ -642,7 +668,7 @@ Istio不提供DNS。**应用程序可以使用底层平台中存在的DNS服务�
 
 ![](resources/istio_ingress_egress.png)
 
-#### 服务发现和负载均衡
+### 服务发现和负载均衡
 **Istio负载均衡网络中实例之间的通信**。
 
 Istio假定存在服务注册表，以跟踪应用程序中服务的实例。它还假定服务的新实例自动注册到服务注册表，并且不健康的实例将被自动删除。
@@ -663,7 +689,7 @@ Pilot使用来自服务注册的信息，并提供与平台无关的服务发现
   - Least Request：将请求分配给当前处理请求最少的后端服务实例。
   - Random：随机选择一个后端服务实例来处理请求。
 
-#### 健康检查和服务熔断
+### 健康检查和服务熔断
 **Envoy会定期检查池中每个实例的运行状况**。Envoy遵循熔断器风格模式，根据健康检查API调用的失败率将实例分类为不健康和健康两种。当给定实例的健康检查失败次数超过预定阀值时，将会从负载均衡池中弹出。类似地，当通过的健康检查成功数超过预定阀值时，该实例将会被添加会负载均衡池。
 
 **服务可以通过使用HTTP 503响应健康检查来主动减轻负担。在这种情况下，服务实例将立即从调用者的负载均衡池中删除。**
@@ -671,28 +697,448 @@ Pilot使用来自服务注册的信息，并提供与平台无关的服务发现
 #### 故障处理
 ![](resources/istio_fault_handler.png)
 
-#### 微调
+### 微调
 **Istio的流量管理规则允许运维人员为每个服务/版本设置故障恢复的全局默认值**。然而，服务的消费者也可以通过特殊的HTTP头提供请求级别值覆盖超时和重试默认值。在Envoy代理的实现中，对应的Header分别是x-envoy-upstream-rq-timeout-ms和x-envoy-max-retries。
 
+### 故障注入
+#### 为什么需要错误注入？
+微服务架构下，需要测试端到端的故障恢复能力。
 
+#### Istio的故障注入
+Istio允许在网络层面按协议注入错误来模拟错误，无需通过应用层面删除Pod，或人为在TCP层造成网络故障来模拟。
 
+#### 注入的错误可以基于特定的条件，可以设置出现错误的比例：
+- **延迟注入**：提高网络延时。
+- **中断注入**：直接返回特定的错误码。
+### 配置规则
+- **VirtualService**：定义了路由规则，用于将流量路由到特定的服务版本。
+- **DestinationRule**：定义了服务版本的负载均衡策略和连接池的配置,是VirtualService路由生效后，配置应用与请求的策略集。
+- **ServiceEntry**：定义了服务的入口，用于将流量路由到网格外的服务。通常用于在Istio服务网格之外启用对服务的请求。
+- **Gateway**：为HTTP/TCP流量配置负载均衡器，最常见的是在网络的边缘的操作，以启用应用程序的入口流量。
 
+#### 在服务之间拆分流量
+**例如下面的规则会把25%的流量路由到v1版本，75%的流量路由到v2版本**
 
-## 跟踪采样
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: reviews
+spec:
+  hosts:
+  - reviews
+  http:
+  - route:
+    - destination:
+        host: reviews
+        subset: v1
+      weight: 25
+    - destination:
+        host: reviews
+        subset: v2
+      weight: 75
+```
 
-## Istio架构
-![](resources/istio_architecture.png)
-## 数据平面Envoy
+#### 超时
+**例如下面的规则会把reviews服务的超时时间设置为10秒**
 
-## 控制平面
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: reviews
+spec:
+  hosts:
+  - reviews
+  http:
+  - timeout: 10s
+    route:
+    - destination:
+        host: reviews
+        subset: v1
+```
+#### 重试
+**例如下面的规则会把reviews服务的重试次数设置为3次**
 
-## 流量管理
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: reviews
+spec:
+  hosts:
+  - reviews
+  http:
+  - retries:
+      attempts: 3
+      perTryTimeout: 2s
+    route:
+    - destination:
+        host: reviews
+        subset: v1
+```
 
+#### 错误注入
+**例如下面的规则会把reviews服务的错误注入设置为50%**
+
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: reviews
+spec:
+  hosts:
+  - reviews
+  http:
+  - fault:
+      delay:
+        percent: 50
+        fixedDelay: 7s
+    route:
+    - destination:
+        host: reviews
+        subset: v1
+```
+
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: reviews
+spec:
+  hosts:
+  - reviews
+  http:
+  - fault:
+      abort:
+        percent: 50
+        httpStatus: 500
+    route:
+    - destination:
+        host: reviews
+        subset: v1
+```
+
+#### 条件规则
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: reviews
+spec:
+  hosts:
+  - reviews
+  http:
+  - match:
+    - headers:
+        end-user:
+          exact: jason
+    route:
+    - destination:
+        host: reviews
+        subset: v3
+```
+
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: reviews
+spec:
+  hosts:
+  - reviews
+  http:
+  - match:
+    - uri:
+        prefix: /api/v1
+    route:
+    - destination:
+        host: reviews
+        subset: v3
+```
+
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: reviews
+spec:
+  hosts:
+  - reviews
+  http:
+  - match:
+    - sourceLabels:
+        version: v3
+    route:
+    - destination:
+        host: reviews
+        subset: v3
+```
+
+#### 流量镜像
+mirror规则可以使Envoy截取所有request, 并转发请求的同时，将request转发至mirror版本，同时在Header的Host/Authority中加上-shadow后缀，以便区分。
+
+**这些mirror请求会工作在fire and forget模式，所有的response都会被废弃。**
+
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: reviews
+spec:
+  hosts:
+  - reviews.prod.svc.cluster.local
+  http:
+  - mirror:
+      host: reviews.test.svc.cluster.local
+    route:
+    - destination:
+        host: reviews.prod.svc.cluster.local
+        subset: v1
+```
+
+#### 规则委托
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: bookinfo
+spec:
+  hosts:
+  - "bookinfo.com"
+  gateways:
+  - bookinfo-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /productpage
+    delegate:
+      name: productpage
+      namespace: nsA
+  - match:
+    - uri:
+        prefix: /reviews
+    delegate:
+      name: reviews
+      namespace: nsB
+```
+
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: productpage
+  namespace: nsA
+spec:
+  hosts:
+  - "bookinfo.com"
+  http:
+  - route:
+    - destination:
+        host: productpage
+        subset: v1
+```
+
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: reviews
+  namespace: nsB
+spec:
+  hosts:
+  - "bookinfo.com"
+  http:
+  - route:
+    - destination:
+        host: reviews
+        subset: v1
+```
+
+#### 优先级
+**当对同一目标有多个规则时，会按照VirtualService的顺序进行应用。换句话说，列表中的第一条规则具有最高优先级，**
+
+#### 目标规则
+**在请求被VirtualService路由之后，DestinationRule配置的一系列策略就生效了**。这些厕率也偶服务者编写，包含断路器，负载均衡，连接池，TLS等。
+
+##### 负载均衡
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: reviews
+spec:
+  host: reviews
+  trafficPolicy:
+    loadBalancer:
+      simple: RANDOM
+    subsets:
+    - name: v1
+      labels:
+        version: v1
+    - name: v2
+      labels:
+        version: v2
+      trafficPolicy:
+        loadBalancer:
+          simple: ROUND_ROBIN
+    - name: v3
+      labels:
+        version: v3
+      trafficPolicy:
+        loadBalancer:
+          simple: LEAST_CONN
+```
+##### 连接池
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: reviews
+spec:
+  host: reviews
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 100
+        maxRequestsPerConnection: 1
+```
+##### 断路器
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: reviews
+spec:
+  host: reviews
+  trafficPolicy:
+    outlierDetection:
+      consecutiveErrors: 5
+      interval: 5s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 10
+```
+
+##### 熔断器
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: reviews
+spec:
+  host: reviews
+  trafficPolicy:
+    circuitBreaker:
+      simpleCb:
+        maxConnections: 100
+        httpMaxRequests: 100
+        sleepWindow: 10s
+        httpDetectionInterval: 10s
+        httpMaxEjectionPercent: 10
+```
+
+##### TLS
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: reviews
+spec:
+  host: reviews
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+      clientCertificate: /etc/certs/myclientcert.pem
+      privateKey: /etc/certs/client_private_key.pem
+      caCertificates: /etc/certs/rootcacerts.pem
+```
+
+#### ServiceEntry
+**ServiceEntry用于将外部服务注册到Istio的服务注册表中，以便于在Istio内部使用。**
+
+只要ServiceEntry涉及了匹配的host的服务，就可以和VirtualService和DestinationRule配合工作。
+
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: external-svc-httpbin
+spec:
+  hosts:
+  - *.httpbin.com
+  ports:
+  - number: 80
+    name: http
+    protocol: HTTP
+  - number: 443
+    name: https
+    protocol: HTTPS
+  resolution: DNS
+```
+#### WorkloadEntry
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: WorkloadEntry
+metadata:
+  name: external-svc-httpbin
+spec:
+  serviceAccount: httpbin
+  address:
+    - 192.168.31.79
+  labels:
+    app: httpbin
+    instance-id: httpbin-1
+```
+
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: external-svc-httpbin
+spec:
+  hosts:
+  - httpbin.com
+  ports:
+  - number: 80
+    name: http
+    protocol: HTTP
+  resolution: STATIC
+  workloadSelector:
+    labels:
+      app: httpbin
+```
+
+#### Gateway
+**Gateway为HTTP/TCP流量配置了一个负载均衡，多数情况下在网络边缘进行操作，用于启用一个服务的入口（Ingress）流量。**
+
+和kubernetes Ingress不同，Istio Gateway只配置四层到六层的功能（例如开放端口或TLS配置）。绑定一个VirtualService到Gateway上，用户就可以使用标准的Istio规则来控制进入的HTTP和TCP流量。
+
+```yaml
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: httpsserver
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - hosts:
+        - httpsserver.jun.com
+      port:
+        name: https-default
+        number: 443
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        credentialName: jun-credential
+```
+
+# Istio多集群
 ## 网络
 Service Mesh 涉及的网络栈
 ![](resources/service_mesh_network.png)
-
-## Istio多集群
 ### 跨地域流量管理的挑战
 * 采用多活数据中心的网络拓扑，任何生产应用都需要完成跨三个数据中心的部署。
 * 为满足单集群的高可用，针对每个数据中心，任何应用都需进行多副本部署，并配置负载均衡。
