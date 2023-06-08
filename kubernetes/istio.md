@@ -1,3 +1,4 @@
+<h1>Istio</h1>
 <div align="center">
   <a href="https://istio.io/">
       <img src="https://github.com/istio/istio/raw/master/logo/istio-bluelogo-whitebackground-unframed.svg"
@@ -6,7 +7,8 @@
 </div>
 
 <!-- ToC start -->
-# 目录
+<h2>Table of Contents</h2>
+
 - [微服务架构的演变](#微服务架构的演变)
   - [Evolution](#evolution)
     - [Monolith架构](#monolith架构)
@@ -23,24 +25,91 @@
   - [服务网格可选方案](#服务网格可选方案)
   - [什么是服务网格](#什么是服务网格)
   - [为什么要使用Istio](#为什么要使用istio)
-  - [Istio功能概览](#Istio功能概览)
-    - [流量管理](#流量管理)
+  - [Istio功能概览](#istio功能概览)
+    - [流量管理和控制](#流量管理和控制)
     - [安全](#安全)
     - [可观察性](#可观察性)
-    - [Istio架构演进](#Istio架构演进)
-    - [设计目标](#设计目标)
-- [深入理解数据平面Envoy](#深入理解数据平面Envoy)
-- [Istio流量管理](#Istio流量管理)
-
+  - [架构](#架构)
+  - [设计目标](#设计目标)
+- [深入理解数据平面Envoy](#深入理解数据平面envoy)
+  - [主流七层代理的比较](#主流七层代理的比较)
+  - [Enovy的优势](#enovy的优势)
+  - [Envoy线程模式](#envoy线程模式)
+    - [Envoy架构](#envoy架构)
+    - [Envoy API](#envoy-api)
+  - [xDS - Envoy的发现机制](#xds---envoy的发现机制)
+  - [Envoy的过滤器模式](#envoy的过滤器模式)
+- [Istio流量管理](#istio流量管理)
+  - [流量管理对象](#流量管理对象)
+  - [Istio的流量劫持机制](#istio的流量劫持机制)
+    - [为用户应用注入Sidecar](#为用户应用注入sidecar)
+    - [注入后的结果](#注入后的结果)
+    - [Init Container](#init-container)
+    - [Sidecar container](#sidecar-container)
+    - [实际例子](#实际例子)
+  - [流量管理](#流量管理)
+    - [请求路由](#请求路由)
+    - [服务之间的通信](#服务之间的通信)
+    - [Ingress 和 Egress](#ingress-和-egress)
+    - [服务发现和负载均衡](#服务发现和负载均衡)
+    - [健康检查和服务熔断](#健康检查和服务熔断)
+      - [故障处理](#故障处理)
+    - [微调](#微调)
+    - [故障注入](#故障注入)
+      - [为什么需要错误注入？](#为什么需要错误注入)
+      - [Istio的故障注入](#istio的故障注入)
+      - [注入的错误可以基于特定的条件，可以设置出现错误的比例：](#注入的错误可以基于特定的条件可以设置出现错误的比例)
+    - [配置规则](#配置规则)
+      - [在服务之间拆分流量](#在服务之间拆分流量)
+      - [超时](#超时)
+      - [重试](#重试)
+      - [错误注入](#错误注入)
+      - [条件规则](#条件规则)
+      - [流量镜像](#流量镜像)
+      - [规则委托](#规则委托)
+      - [优先级](#优先级)
+      - [目标规则](#目标规则)
+        - [负载均衡](#负载均衡)
+        - [连接池](#连接池)
+        - [断路器](#断路器)
+        - [熔断器](#熔断器)
+        - [TLS](#tls)
+      - [ServiceEntry](#serviceentry)
+      - [WorkloadEntry](#workloadentry)
+      - [Gateway](#gateway)
+- [Istio多集群](#istio多集群)
+  - [网络](#网络)
+    - [跨地域流量管理的挑战](#跨地域流量管理的挑战)
+    - [规模化带来的挑战(eBay)](#规模化带来的挑战ebay)
+    - [多集群部署](#多集群部署)
+    - [入站流量架构 L4 + L7](#入站流量架构-l4--l7)
+    - [单网关集群多环境支持](#单网关集群多环境支持)
+    - [应用高可用接入方案](#应用高可用接入方案)
+      - [创建WorkloadEntry](#创建workloadentry)
+      - [定义ServiceEntry](#定义serviceentry)
+      - [定义基于Locality的流量转发规则](#定义基于locality的流量转发规则)
+    - [应对规模化集群的挑战](#应对规模化集群的挑战)
+      - [Istiod自身的规模控制](#istiod自身的规模控制)
+    - [基于联邦的统一流量模型](#基于联邦的统一流量模型)
+    - [统一流量模型 - NameService](#统一流量模型---nameservice)
+    - [AccessPoint 控制器](#accesspoint-控制器)
+    - [展望](#展望)
 
 <!-- ToC end -->
 # 微服务架构的演变
+
 ## Evolution
+
 ### Monolith架构
+
 ![](resources/monolith_architecture.png)
+
 ### Microservice架构
+
 ![](resources/microservice_architecture.png)
+
 ### 典型的微服务业务场景
+
 基于微服务的应用架构：
 
 ![](resources/app-based-microservice.png)
@@ -134,6 +203,7 @@ Service Mesh:
 它的需求包括：服务发现，负载均衡，故障恢复，指标收集和监控以及通常更加复杂的运维需求，例如A/B测试，金丝雀发布，限流，访问控制和端到端认证等。服务网格提供了一种方法来解决这些问题，而不需要对应用程序进行任何代码更改。
 
 ## 为什么要使用Istio
+
 - HTTP，gRPC，WebSockets和TCP流量的自动负载均衡
 - 通过丰富的路由规则、重试、故障转移和故障注入、可以对流量行为进行细粒度控制
 - 可插入的策略层和配置API，支持访问控制、速率限制和配额
@@ -141,20 +211,24 @@ Service Mesh:
 - 通过强大的基于身份的验证和授权，在集群中实现安全的服务间通信
 
 ## Istio功能概览
-![](resources/istio-features-overview.png)
 
-### 流量管理
+![istio features](resources/istio-features-overview.png)
+
+### 流量管理和控制
+
 - **连接**
-  - 通过简单的规则配置和流量路由，可以控制服务之间的流量和API调用。Istio简化了断路器、超时和重试等服务级别属性的配置，并且可以轻松设置A/B测试、金丝雀部署和机遇百分比的流量分割的分阶段部署等重要任务。
+  - 通过简单的规则配置和流量路由，可以控制服务之间的流量和API调用。Istio简化了断路器、超时和重试等服务级别属性的配置，并且可以轻松设置A/B测试、金丝雀部署和按百分比的流量分割的分阶段部署等重要任务。
 - **控制**
   - 通过更好地了解流量和开箱即用的故障恢复功能，可以在问题出现之前先发现问题，使调用更可靠，并且使得网络更加健壮。
 
 ### 安全
+
 - **使得开发人员可以专注于应用程序级别的安全性**
   - Istio通过提供一种统一的方法来强制执行策略和配置，从而简化了安全性的复杂性。Istio的安全功能包括服务间的身份验证、授权和加密通信，从而保护服务间的流量，并减轻了应用程序代码中的安全性功能的负担。
 - **虽然Istio与平台无关，但将其与Kubernetes（或基础架构）网络策略结合使用，其优势会更大，包括在网络和应用层保护Pod间或服务间通信的能力**
 
 ### 可观察性
+
 Istio生成以下类型的遥测数据，以提供对整个服务网络的可观察性：
 - **指标**：Istio基于4个监控的黄金指标（延迟、流量、错误和饱和）生成了一系列服务指标。Istio还为网络控制平面提供了更详细的指标。除此以外还提供了一组默认的基于这些指标的网络监控仪表板。
 - **分布式追踪**：Istio通过集成Zipkin和Jaeger，提供了对服务间调用的分布式追踪。Istio还提供了一个默认的基于Kiali的服务拓扑图，以帮助您可视化服务网格。
@@ -162,16 +236,19 @@ Istio生成以下类型的遥测数据，以提供对整个服务网络的可观
 
 <p><span style="color:yellow;font-weight: bold">所有这些功能可以更有效地设置、监控和实施服务上的SLO，快速有效地检测和修复问题。</span></p>
 
-## Istio架构演进
+## 架构
+
 - **架构演进**
   - 从微服务回归单体架构
-  ![](resources/istio-architecture-evolution.png)
+
+  ![istio architecture evolution](resources/istio-architecture-evolution.png)
 - **数据平面**
   - 由一组以Sidecar方式部署智能代理（Envoy）组成。
 - **控制平面**
   - 负责管理和配置代理来路由流量。
 
 ## 设计目标
+
 - **最大透明度**
   - Istio将自身自动注入到服务间所有的网络路径中，运维和开发人员只需要付出很少的代价就可以从中受益。
   - Istio使用Sidecar代理捕获流量，并且在尽可能的地方自动编程网络层，以路由流量通过这些代理，而无需对已部署的应用程序代码进行改动。
@@ -186,7 +263,9 @@ Istio生成以下类型的遥测数据，以提供对整个服务网络的可观
   - 因此，策略系统作为独特的服务来维护，具有自己的API，而不是将其放到代理/Sidecar中，这容许服务根据需要直接与其集成。
 
 # 深入理解数据平面Envoy
+
 ## 主流七层代理的比较
+
 |   |  Envoy | Nginx  | HA Proxy  |
 |---|---|---|---|
 | HTTP/2  | 对HTTP/2有完整支持，同时支持upstream和downstream HTTP/2.  | 从1.9.5开始支持HTTP/2  | HAProxy Enterprise才支持HTTP/2  |
@@ -195,6 +274,7 @@ Istio生成以下类型的遥测数据，以提供对整个服务网络的可观
 | Connection draining  | 支持hot reload, 并且通过share memory实现connection draning的功能 | Nginx Plus收费版支持connection draining  | 支持热启动，但不保证丢弃连接 |
 
 ## Enovy的优势
+
 - **性能**
   - 在具备大量特征的同时，Envoy提供极高的吞吐量和低尾部延迟差异，而CPU和RAM消耗却相对较少。
 - **可扩展性**
@@ -213,7 +293,7 @@ Istio生成以下类型的遥测数据，以提供对整个服务网络的可观
 ### Envoy架构
 ![](resources/envoy_architecture.png)
 
-### v1 API的缺点和v2的引入
+### Envoy API
 - **v1 API仅使用JSON/REST，本质上是轮询**，缺点有：
   - 尽管Envoy在内部使用的是JSON模式，但API本身并不是强一致性，而且安全地实现他们的通用服务器也很难。
   - 虽然轮询工作在实践中是很正常的用法，但更强大的控制平面更喜欢streaming API, 当其就绪后，可以将更新推送给每个Envoy。这可以将更新传播时间从30-60s降低到250-500ms，即使在极其庞大的部署中也是如此。
@@ -237,10 +317,13 @@ Istio生成以下类型的遥测数据，以提供对整个服务网络的可观
   - **Aggregated Discovery Service (ADS)**: 用于配置Envoy的聚合服务
 
 ## Envoy的过滤器模式
-![](resources/envoy_filter.png) 
+
+![envoy filter](resources/envoy_filter.png) 
 
 # Istio流量管理
-## 流量管理
+
+## 流量管理对象
+
 - Gateway
 - VirtualService
 - DestinationRule
@@ -249,12 +332,16 @@ Istio生成以下类型的遥测数据，以提供对整个服务网络的可观
 - Sidecar
 
 ## Istio的流量劫持机制
+
 ### 为用户应用注入Sidecar
+
 - 自动注入
 - 手动注入
   - `istioctl kube-inject -f <your-app-spec>.yaml | kubectl apply -f -`
   - `kubectl apply -f <(istioctl kube-inject -f <your-app-spec>.yaml)`
+
 ### 注入后的结果
+
 - 注入了 init-container, istio-init
   - istio-init 会修改应用的iptables规则，将所有的流量都重定向到sidecar
     - `istio-iptables -p 15001 -z 15006 -u 1337 -m REDIRECT -i * -x -b 9080 -d 15090,15021,15020`
@@ -263,6 +350,7 @@ Istio生成以下类型的遥测数据，以提供对整个服务网络的可观
     - `istioctl proxy-config routes <pod-name>.<namespace>`
 
 ### Init Container
+
 **将应用容器的所有流量都转发到Envoy的15001端口。**
 
 使用istio-proxy用户身份运行，UID为1337， 即Envoy所处的用户空间，这也是istio-proxy的默认使用的用户（YAML配置中的runAsUser字段）。
@@ -634,10 +722,12 @@ check config dump:
 ]
 ```
 
-### 实际例子：
+### 实际例子
+
 ![](resources/istio_demo.png)
 
 ## 流量管理
+
 - **Traffic splitting from infrastructure scaling**: proportion of traffic routed to a version is dependent of number of instances of that version.
 ![](resources/traffic_splitting_from_infrastructure_scaling.png)
 - **Content-based steering**: traffic is routed to a version based on HTTP headers, cookies, or other information in the request. The content of a request can be used to determinie the destination of a request.
