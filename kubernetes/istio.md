@@ -1,4 +1,4 @@
-****<h1>Istio</h1>
+<h1>Istio</h1>
 <div align="center">
   <a href="https://istio.io/">
       <img src="https://github.com/istio/istio/raw/master/logo/istio-bluelogo-whitebackground-unframed.svg"
@@ -7,7 +7,7 @@
 </div>
 
 <!-- ToC start -->
-<h2>Table of Contents</h2>
+<h2>目录</h2>
 
 - [应用架构的演变](#应用架构的演变)
   - [Monolith架构](#monolith架构)
