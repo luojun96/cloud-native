@@ -1,12 +1,14 @@
 # Go Context
 
 ## Problem Statement
+
 * You started a function and you need to pass some common parameters to the downstream functions. You cannot pass these common parameters each as an argument to all the downstream functions
 * You started a goroutine which in turn start more goroutines and so on. Suppose the task that you were doing is no longer need. Then how to inform all child gorountines to.  gracefully exit so that resources can be freed up.
 * A task should be finished within a specificed timeout of say 2 seconds. If not it should   gracefully exit or return.
 * A stask should be finished within a deadline eg it should end before 5 pm. If not finished then it should gracefully exit and return.
 
 ## Context Interface
+
 ```go
 // A Context carries a deadline, a cancellation signal, and other values across
 // API boundaries.
@@ -108,16 +110,19 @@ type Context interface {
 ```
 
 ## Creating New Context
+
 * context.Background()
 * context.ToDo()
 
 ## Deriving From Context
+
 * context.WithValue()
 * [context.WithCancel()](https://github.com/luojun96/go-opt/blob/main/concurrency/context-cancel/main.go)
 * [context.WithTimeout()](https://github.com/luojun96/go-opt/blob/main/concurrency/context-withtimeout/main.go)
 * [context.WithDeadline()](https://github.com/luojun96/go-opt/blob/main/concurrency/context-withdeadline/main.go)
 
 ## BestPractices and Caveats
+
 * Do not store a context within a struct type.
 * Context should flow through your program.
 * Always pass context as the first argument to a function.
