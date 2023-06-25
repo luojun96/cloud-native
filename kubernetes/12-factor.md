@@ -1,4 +1,5 @@
 # [12-factor](https://12factor.net/)
+
 - ***CodeBase***: One codebase tracked in revision control, many deploys
 - ***Dependencie***: Explicitly declare and isolate dependencies
 - ***Config***: Store config in the environment
