@@ -22,6 +22,7 @@
   - [operator](kubernetes/operator.md)
   - [scaler](kubernetes/scaler.md)
   - [security](kubernetes/security.md)
+  - [eBPF](kubernetes/ebpf.md)
   - [microservice-development-deployment](kubernetes/microservice-development-deployment.md)
 - [CI/CD](cicd/tekton.md)
   - [argocd](cicd/argocd.md)
